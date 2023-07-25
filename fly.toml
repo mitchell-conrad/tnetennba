@@ -1,0 +1,25 @@
+# fly.toml app configuration file generated for tnetennba on 2023-07-25T18:22:51+10:00
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
+
+app = "tnetennba"
+primary_region = "syd"
+kill_signal = "SIGTERM"
+swap_size_mb = 512
+
+[env]
+  PHX_HOST = "tnetennba.fly.dev"
+  PORT = "8080"
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = true
+  auto_start_machines = true
+  min_machines_running = 0
+  processes = ["app"]
+  [http_service.concurrency]
+    type = "connections"
+    hard_limit = 1000
+    soft_limit = 1000
