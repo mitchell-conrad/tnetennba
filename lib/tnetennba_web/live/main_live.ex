@@ -2,8 +2,6 @@ defmodule TnetennbaWeb.MainLive do
   use TnetennbaWeb, :live_view
 
   def render(assigns) do
-    IO.inspect(assigns)
-
     ~H"""
     <h1>
       Todays letters: <%= @current_letters %>
