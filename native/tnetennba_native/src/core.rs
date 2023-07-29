@@ -95,7 +95,7 @@ mod tests {
 
     #[test]
     fn test_is_good_guess() {
-        assert!(is_good_guess("test", "a", "tet"));
+        assert!(is_good_guess(&vec!["test".to_owned()], "test", "a", "tet"));
     }
 
     #[test]
@@ -105,6 +105,6 @@ mod tests {
 
     #[test]
     fn test_get_word() {
-        assert_eq!(get_todays_word(get_words(), 3), "unallayably");
+        assert_eq!(get_todays_word(&get_words(), 3), "unallayably");
     }
 }

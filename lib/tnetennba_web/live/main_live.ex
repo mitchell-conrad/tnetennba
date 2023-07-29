@@ -2,6 +2,8 @@ defmodule TnetennbaWeb.MainLive do
   require Logger
   use TnetennbaWeb, :live_view
 
+  # TODO: Tidy this module up lmao
+
   def render(assigns) do
     ~H"""
     <%= if @new_record? do %>
@@ -13,6 +15,9 @@ defmodule TnetennbaWeb.MainLive do
     </h1>
     <p>
       Today's target letter: <%= @current_letter %>
+    </p>
+    <p>
+      Today's global record: <%= @global_record %>
     </p>
 
     <.simple_form autocomplete="off" for={@form} phx-change="change" phx-submit="guess">
@@ -54,26 +59,37 @@ defmodule TnetennbaWeb.MainLive do
       end
 
     new_record =
-      case Tnetennba.DynamoDao.update_record(
-             socket.assigns.dynamoClient,
-             word,
-             length(new_guesses)
-           ) do
-        {:ok, _, _} -> true
-        _ -> false
+      if length(new_guesses) > length(current_guesses) do
+        # only do a dynamo lookup & update on new local records
+        case Tnetennba.DynamoDao.update_record(
+               socket.assigns.dynamo_client,
+               word,
+               length(new_guesses)
+             ) do
+          {:ok, _, _} -> true
+          _ -> false
+        end
+      else
+        false
+      end
+
+    global_record =
+      if new_record do
+        length(new_guesses)
+      else
+        socket.assigns.global_record
       end
 
     endTime = System.monotonic_time()
-
     guess_eval_time = System.convert_time_unit(endTime - startTime, :native, :millisecond)
-
     Logger.info(%{guess_eval_time_ms: guess_eval_time})
 
     {:noreply,
      assign(socket, %{
        form: to_form(%{"guess" => ""}),
        current_guesses: new_guesses,
-       new_record?: new_record
+       new_record?: new_record,
+       global_record: global_record
      })}
   end
 
@@ -90,6 +106,9 @@ defmodule TnetennbaWeb.MainLive do
       |> String.to_charlist()
       |> Enum.shuffle()
 
+    dynamo_client = AWS.Client.create("ap-southeast-2")
+    global_record = Tnetennba.DynamoDao.get_record(dynamo_client, word)
+
     {:ok,
      assign(socket, %{
        days_since_ce: 0,
@@ -101,7 +120,8 @@ defmodule TnetennbaWeb.MainLive do
        form: to_form(%{"guess" => ""}),
        start_time: System.os_time(:second),
        guess_times: [],
-       dynamoClient: AWS.Client.create("ap-southeast-2"),
+       dynamo_client: dynamo_client,
+       global_record: global_record,
        new_record?: false
      })}
   end
