@@ -1,26 +1,31 @@
 use itertools::Itertools;
-use std::env;
+use std::{
+    env,
+    fs::File,
+    io::{self, BufRead},
+};
 
 use chrono::{Datelike, FixedOffset, Utc};
 
-pub fn is_good_guess(word: &str, letter: &str, guess: &str) -> bool {
+pub fn is_good_guess(dictionary: &Vec<String>, word: &str, letter: &str, guess: &str) -> bool {
     guess.len() <= word.len()
         && guess.contains(letter)
         && is_partial_anagram(guess, word)
-        && dictionary_contains(guess)
+        && dictionary_contains(dictionary, guess)
 }
 
-fn dictionary_contains(_guess: &str) -> bool {
-    true
+fn dictionary_contains(dictionary: &Vec<String>, guess: &str) -> bool {
+    dictionary.binary_search(&guess.to_owned()).is_ok()
 }
+
 pub fn get_words() -> Vec<String> {
     let is_prod = env::var("IS_PROD").is_ok();
 
     if is_prod {
-        // TODO: Pull from s3 populated file
-        include_str!("test_words.txt")
+        let file = File::open("real_words.txt").unwrap();
+        io::BufReader::new(file)
             .lines()
-            .map(|line| line.to_string())
+            .map(|l| l.expect("Could not parse line"))
             .collect()
     } else {
         include_str!("test_words.txt")
@@ -28,6 +33,14 @@ pub fn get_words() -> Vec<String> {
             .map(|line| line.to_string())
             .collect()
     }
+}
+
+pub fn get_dictionary() -> Vec<String> {
+    let file = File::open("filtered_dictionary.txt").unwrap();
+    io::BufReader::new(file)
+        .lines()
+        .map(|l| l.expect("Could not parse line"))
+        .collect()
 }
 
 fn is_partial_anagram(needle: &str, haystack: &str) -> bool {
@@ -39,10 +52,17 @@ fn is_partial_anagram(needle: &str, haystack: &str) -> bool {
     })
 }
 
-pub fn get_todays_word(words: Vec<String>, days_since_ce: usize) -> String {
+pub fn get_todays_word(words: &Vec<String>, days_since_ce: usize) -> String {
     let idx = days_since_ce % words.len();
 
     words[idx].clone()
+}
+
+pub fn get_todays_letter(words: &Vec<String>, days_since_ce: usize) -> String {
+    let word_idx: usize = days_since_ce % words.len();
+    let letter_idx: usize = days_since_ce % words[word_idx].len();
+
+    words[word_idx].chars().nth(letter_idx).unwrap().to_string()
 }
 
 pub fn get_days_since_ce() -> usize {
@@ -55,6 +75,14 @@ pub fn get_days_since_ce() -> usize {
 mod tests {
 
     use super::*;
+
+    #[test]
+    fn test_get_letter() {
+        let words = vec!["asdf".to_owned(), "bbb".to_owned()];
+
+        assert_eq!("b", get_todays_letter(&words, 1));
+        assert_eq!("a", get_todays_letter(&words, 0));
+    }
 
     #[test]
     fn test_partial_anagram() {

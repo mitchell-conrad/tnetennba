@@ -2,11 +2,45 @@ defmodule Tnetennba.Application do
   # See https://hexdocs.pm/elixir/Application.html
   # for more information on OTP Applications
   @moduledoc false
+  require Logger
 
   use Application
 
+  def downloadS3Object(client, objectKey) do
+    path = Path.relative_to_cwd(objectKey)
+
+    case File.stat(path) do
+      {:ok, _} ->
+        Logger.info("Got #{objectKey} already, skipping s3 download.")
+        {:ok}
+
+      {:error, _} ->
+        Logger.info("Don't got #{objectKey}, downloading from s3...")
+
+        startTime = System.monotonic_time()
+
+        case AWS.S3.get_object(client, "tnetennba-site-data", objectKey) do
+          {:ok, _, %{body: body}} ->
+            File.write(path, body)
+            # Hard fail here if download fails
+        end
+
+        endTime = System.monotonic_time()
+        diff = System.convert_time_unit(endTime - startTime, :native, :millisecond)
+
+        Logger.info("Finished s3 download in #{diff}ms")
+
+        {:ok}
+    end
+  end
+
   @impl true
   def start(_type, _args) do
+    s3Client = AWS.Client.create("us-west-2")
+
+    downloadS3Object(s3Client, "real_words.txt")
+    downloadS3Object(s3Client, "filtered_dictionary.txt")
+
     children = [
       # Start the Telemetry supervisor
       TnetennbaWeb.Telemetry,

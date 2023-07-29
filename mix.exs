@@ -44,7 +44,9 @@ defmodule Tnetennba.MixProject do
       {:telemetry_poller, "~> 1.0"},
       {:jason, "~> 1.2"},
       {:plug_cowboy, "~> 2.5"},
-      {:rustler, "~> 0.29.1"}
+      {:rustler, "~> 0.29.1"},
+      {:aws, "~> 0.13.3"},
+      {:hackney, "~> 1.16"}
     ]
   end
 
