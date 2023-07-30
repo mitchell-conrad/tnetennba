@@ -19,7 +19,6 @@ defmodule TnetennbaWeb.Router do
     pipe_through :browser
 
     live "/", MainLive
-
   end
 
   defp assign_session_id(conn, _) do

@@ -11,7 +11,7 @@ defmodule TnetennbaWeb.MainLive do
     <% end %>
 
     <h1>
-      Todays letters: <%= @session_state.letters %>
+      Todays letters: <%= letterise(@session_state.letters) %>
     </h1>
     <p>
       Today's target letter: <%= @current_letter %>
@@ -157,5 +157,9 @@ defmodule TnetennbaWeb.MainLive do
     guesses
     |> Enum.map(fn [guess, _] -> guess end)
     |> Enum.member?(guess)
+  end
+
+  def letterise(letters) do
+    String.upcase("#{letters}")
   end
 end

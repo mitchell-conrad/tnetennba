@@ -9,7 +9,8 @@ defmodule TnetennbaWeb.Endpoint do
     key: "_tnetennba_key",
     signing_salt: "g1sSjzOc",
     same_site: "Lax",
-    max_age: 9999999999,  # Over 300 years.
+    # Over 300 years.
+    max_age: 9_999_999_999
   ]
 
   socket "/live", Phoenix.LiveView.Socket, websocket: [connect_info: [session: @session_options]]

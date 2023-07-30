@@ -26,6 +26,4 @@ defmodule Tnetennba.DynamoDao do
       ReturnValuesOnConditionCheckFailure: "ALL_OLD"
     })
   end
-
-
 end
