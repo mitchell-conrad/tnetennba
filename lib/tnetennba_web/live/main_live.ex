@@ -90,7 +90,6 @@ defmodule TnetennbaWeb.MainLive do
       start_time: start_time
     }
 
-    # TODO: Make this async using Process.start or w/e
     Task.async(fn ->
       Tnetennba.Session.put_session(
         socket.assigns.dynamo_client,
