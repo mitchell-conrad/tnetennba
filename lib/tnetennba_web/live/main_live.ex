@@ -14,7 +14,7 @@ defmodule TnetennbaWeb.MainLive do
       Todays letters: <%= letterise(@session_state.letters) %>
     </h1>
     <p>
-      Today's target letter: <%= @current_letter %>
+      Today's target letter: <%= String.upcase(@current_letter) %>
     </p>
     <p>
       Today's global record: <%= @global_record %>
@@ -146,7 +146,7 @@ defmodule TnetennbaWeb.MainLive do
   end
 
   def seconds_to_mins(time) do
-    seconds = System.convert_time_unit(time, :native, :seconds)
+    seconds = System.convert_time_unit(time, :native, :second)
     minutes = div(seconds, 60)
     secs = rem(seconds, 60)
 
