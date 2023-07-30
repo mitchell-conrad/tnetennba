@@ -11,7 +11,7 @@ defmodule TnetennbaWeb.MainLive do
     <% end %>
 
     <h1>
-      Todays letters: <%= @current_letters %>
+      Todays letters: <%= @session_state.letters %>
     </h1>
     <p>
       Today's target letter: <%= @current_letter %>
@@ -25,15 +25,15 @@ defmodule TnetennbaWeb.MainLive do
     </.simple_form>
 
     <h1>
-      <%= length(@current_guesses) %>
+      <%= length(@session_state.guesses) %>
     </h1>
 
     <ul>
-      <li :for={{guess, time} <- @current_guesses}>
-        <%= if guess == @current_word do %>
-          <%= String.upcase(guess) %> <%= seconds_to_mins(time - @start_time) %>
+      <li :for={[guess, time] <- @session_state.guesses}>
+        <%= if guess == @session_state.word do %>
+          <%= String.upcase(guess) %> <%= seconds_to_mins(time - @session_state.start_time) %>
         <% else %>
-          <%= String.downcase(guess) %> <%= seconds_to_mins(time - @start_time) %>
+          <%= String.downcase(guess) %> <%= seconds_to_mins(time - @session_state.start_time) %>
         <% end %>
       </li>
     </ul>
@@ -41,19 +41,22 @@ defmodule TnetennbaWeb.MainLive do
   end
 
   def handle_event("guess", form_vals, socket) do
-    guess = String.downcase(form_vals["guess"])
-    word = socket.assigns.current_word
-    Logger.info(%{todays_word: word})
+    session_id = socket.assigns.session_id
+    word = socket.assigns.session_state.word
     letter = socket.assigns.current_letter
-    now = System.os_time(:second)
-    current_guesses = socket.assigns.current_guesses
+    letters = socket.assigns.session_state.letters
+    current_guesses = socket.assigns.session_state.guesses
+    start_time = socket.assigns.session_state.start_time
 
-    startTime = System.monotonic_time()
+    guess = String.downcase(form_vals["guess"])
+    now = System.monotonic_time()
+
+    Logger.info(%{todays_word: word})
 
     new_guesses =
       if Tnetennba.Native.is_good_guess(word, letter, guess) and
            !guess_in_current_guesses(current_guesses, guess) do
-        [{guess, now} | current_guesses]
+        [[guess, now] | current_guesses]
       else
         current_guesses
       end
@@ -80,14 +83,26 @@ defmodule TnetennbaWeb.MainLive do
         socket.assigns.global_record
       end
 
-    endTime = System.monotonic_time()
-    guess_eval_time = System.convert_time_unit(endTime - startTime, :native, :millisecond)
-    Logger.info(%{guess_eval_time_ms: guess_eval_time})
+    new_session_state = %Tnetennba.Session{
+      letters: letters,
+      word: word,
+      guesses: new_guesses,
+      start_time: start_time
+    }
+
+    # TODO: Make this async using Process.start or w/e
+    Task.async(fn ->
+      Tnetennba.Session.put_session(
+        socket.assigns.dynamo_client,
+        session_id,
+        new_session_state
+      )
+    end)
 
     {:noreply,
      assign(socket, %{
        form: to_form(%{"guess" => ""}),
-       current_guesses: new_guesses,
+       session_state: new_session_state,
        new_record?: new_record,
        global_record: global_record
      })}
@@ -97,36 +112,42 @@ defmodule TnetennbaWeb.MainLive do
     {:noreply, assign(socket, :form, to_form(form))}
   end
 
-  def mount(_params, _assigns, socket) do
+  def mount(_params, session, socket) do
     word = Tnetennba.Native.get_todays_word()
     letter = Tnetennba.Native.get_todays_letter()
-
-    letters =
-      word
-      |> String.to_charlist()
-      |> Enum.shuffle()
-
+    session_id = session["session_id"]
     dynamo_client = AWS.Client.create("ap-southeast-2")
+
+    {:ok, session_state} = Tnetennba.Session.get_session(dynamo_client, session_id)
+
+    session_state =
+      if session_state.word == word do
+        session_state
+      else
+        %Tnetennba.Session{
+          letters: Enum.shuffle(String.to_charlist(word)),
+          word: word,
+          guesses: [],
+          start_time: System.monotonic_time()
+        }
+      end
+
     global_record = Tnetennba.DynamoDao.get_record(dynamo_client, word)
 
     {:ok,
      assign(socket, %{
-       days_since_ce: 0,
-       temperature: 10,
-       current_letters: letters,
-       current_word: word,
+       session_id: session_id,
+       session_state: session_state,
        current_letter: letter,
-       current_guesses: [],
        form: to_form(%{"guess" => ""}),
-       start_time: System.os_time(:second),
-       guess_times: [],
        dynamo_client: dynamo_client,
        global_record: global_record,
        new_record?: false
      })}
   end
 
-  def seconds_to_mins(seconds) do
+  def seconds_to_mins(time) do
+    seconds = System.convert_time_unit(time, :native, :seconds)
     minutes = div(seconds, 60)
     secs = rem(seconds, 60)
 
@@ -135,7 +156,7 @@ defmodule TnetennbaWeb.MainLive do
 
   def guess_in_current_guesses(guesses, guess) do
     guesses
-    |> Enum.map(fn {guess, _} -> guess end)
+    |> Enum.map(fn [guess, _] -> guess end)
     |> Enum.member?(guess)
   end
 end

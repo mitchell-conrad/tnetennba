@@ -46,7 +46,9 @@ defmodule Tnetennba.MixProject do
       {:plug_cowboy, "~> 2.5"},
       {:rustler, "~> 0.29.1"},
       {:aws, "~> 0.13.3"},
-      {:hackney, "~> 1.16"}
+      {:hackney, "~> 1.16"},
+      {:elixir_uuid, "~> 1.2"},
+      {:poison, "~> 5.0"}
     ]
   end
 

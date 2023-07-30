@@ -8,6 +8,7 @@ defmodule TnetennbaWeb.Router do
     plug :put_root_layout, html: {TnetennbaWeb.Layouts, :root}
     plug :protect_from_forgery
     plug :put_secure_browser_headers
+    plug :assign_session_id
   end
 
   pipeline :api do
@@ -19,6 +20,16 @@ defmodule TnetennbaWeb.Router do
 
     live "/", MainLive
 
+  end
+
+  defp assign_session_id(conn, _) do
+    if get_session(conn, :session_id) do
+      # If the session_id is already set, don't replace it.
+      conn
+    else
+      session_id = UUID.uuid1()
+      conn |> put_session(:session_id, session_id)
+    end
   end
 
   # Other scopes may use custom stacks.

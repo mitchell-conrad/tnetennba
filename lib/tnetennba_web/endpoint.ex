@@ -8,7 +8,8 @@ defmodule TnetennbaWeb.Endpoint do
     store: :cookie,
     key: "_tnetennba_key",
     signing_salt: "g1sSjzOc",
-    same_site: "Lax"
+    same_site: "Lax",
+    max_age: 9999999999,  # Over 300 years.
   ]
 
   socket "/live", Phoenix.LiveView.Socket, websocket: [connect_info: [session: @session_options]]

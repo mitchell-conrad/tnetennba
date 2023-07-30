@@ -17,6 +17,7 @@ defmodule Tnetennba.DynamoDao do
     # TODO: Extract old record from failed conditional update. This is annoying as the old record
     #  is returned as escaped json, not a nice map :(
     new_max_string = Integer.to_string(new_max)
+
     AWS.DynamoDB.put_item(client, %{
       TableName: "tnetennba",
       Item: %{Word: %{S: word}, CurrentRecord: %{N: new_max_string}},
@@ -25,4 +26,6 @@ defmodule Tnetennba.DynamoDao do
       ReturnValuesOnConditionCheckFailure: "ALL_OLD"
     })
   end
+
+
 end
