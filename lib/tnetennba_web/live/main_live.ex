@@ -49,7 +49,7 @@ defmodule TnetennbaWeb.MainLive do
     start_time = socket.assigns.session_state.start_time
 
     guess = String.downcase(form_vals["guess"])
-    now = System.monotonic_time()
+    now = System.os_time()
 
     Logger.info(%{todays_word: word})
 
@@ -127,7 +127,7 @@ defmodule TnetennbaWeb.MainLive do
           letters: Enum.shuffle(String.to_charlist(word)),
           word: word,
           guesses: [],
-          start_time: System.monotonic_time()
+          start_time: System.os_time()
         }
       end
 
