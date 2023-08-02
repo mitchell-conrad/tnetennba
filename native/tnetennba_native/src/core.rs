@@ -1,5 +1,6 @@
 use itertools::Itertools;
 use std::{
+    cmp::Ordering::{Equal, Greater, Less},
     env,
     fs::File,
     io::{self, BufRead},
@@ -15,13 +16,20 @@ pub fn is_good_guess(dictionary: &Vec<String>, word: &str, letter: &str, guess: 
 }
 
 fn dictionary_contains(dictionary: &Vec<String>, guess: &str) -> bool {
-    dictionary.binary_search(&guess.to_owned()).is_ok()
+    dictionary
+        .binary_search_by(|e| match guess.cmp(e) {
+            Greater => Less,
+            Equal => Equal,
+            Less => Greater,
+        })
+        .is_ok()
 }
 
 pub fn get_words() -> Vec<String> {
     let is_prod = env::var("IS_PROD").is_ok();
 
     if is_prod {
+        // Downloaded by elixir app from s3 at init time
         let file = File::open("real_words.txt").unwrap();
         io::BufReader::new(file)
             .lines()
@@ -36,11 +44,21 @@ pub fn get_words() -> Vec<String> {
 }
 
 pub fn get_dictionary() -> Vec<String> {
-    let file = File::open("filtered_dictionary.txt").unwrap();
-    io::BufReader::new(file)
-        .lines()
-        .map(|l| l.expect("Could not parse line"))
-        .collect()
+    let is_prod = env::var("IS_PROD").is_ok();
+
+    if is_prod {
+        let file = File::open("filtered_dictionary.txt").unwrap();
+        io::BufReader::new(file)
+            .lines()
+            .map(|l| l.expect("Could not parse line"))
+            .collect()
+    } else {
+        let file = File::open("filtered_dictionary.txt").unwrap();
+        io::BufReader::new(file)
+            .lines()
+            .map(|l| l.expect("Could not parse line"))
+            .collect()
+    }
 }
 
 fn is_partial_anagram(needle: &str, haystack: &str) -> bool {
@@ -69,6 +87,16 @@ pub fn get_days_since_ce() -> usize {
     // Get sydney time offset so we're vaguely based on aus time
     let offset = FixedOffset::east_opt(10 * 3600).unwrap();
     Utc::now().with_timezone(&offset).num_days_from_ce() as usize
+}
+
+pub fn get_valid_anagram_count(dictionary: &Vec<String>, word: &str, letter: &str) -> usize {
+    dictionary.iter().fold(0, |acc, e| {
+        if is_good_guess(dictionary, word, letter, e) {
+            acc + 1
+        } else {
+            acc
+        }
+    })
 }
 
 #[cfg(test)]
@@ -106,5 +134,20 @@ mod tests {
     #[test]
     fn test_get_word() {
         assert_eq!(get_todays_word(&get_words(), 3), "unallayably");
+    }
+
+    #[test]
+    fn test_dictionary_lookup() {
+        assert!(dictionary_contains(&get_dictionary(), "test"));
+    }
+
+    #[test]
+    fn test_anagram_count() {
+        
+
+        assert_eq!(
+            get_valid_anagram_count(&get_dictionary(), "niceltfspoot", "s"),
+            15
+        );
     }
 }

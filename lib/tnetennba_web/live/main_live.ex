@@ -19,6 +19,7 @@ defmodule TnetennbaWeb.MainLive do
     <p>
       Today's global record: <%= @global_record %>
     </p>
+    <progress max={@global_max} value={length(@session_state.guesses)}> </progress>
 
     <.simple_form autocomplete="off" for={@form} phx-change="change" phx-submit="guess">
       <.input field={@form[:guess]} />
@@ -133,6 +134,8 @@ defmodule TnetennbaWeb.MainLive do
 
     global_record = Tnetennba.DynamoDao.get_record(dynamo_client, word)
 
+    global_max = Tnetennba.Native.get_max_anagrams()
+
     {:ok,
      assign(socket, %{
        session_id: session_id,
@@ -141,6 +144,7 @@ defmodule TnetennbaWeb.MainLive do
        form: to_form(%{"guess" => ""}),
        dynamo_client: dynamo_client,
        global_record: global_record,
+       global_max: global_max,
        new_record?: false
      })}
   end
