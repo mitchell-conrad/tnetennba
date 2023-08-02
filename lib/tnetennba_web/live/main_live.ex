@@ -22,7 +22,7 @@ defmodule TnetennbaWeb.MainLive do
     <progress max={@global_max} value={length(@session_state.guesses)}> </progress>
 
     <.simple_form autocomplete="off" for={@form} phx-change="change" phx-submit="guess">
-      <.input field={@form[:guess]} />
+      <.input autofocus field={@form[:guess]} />
     </.simple_form>
 
     <h1>
