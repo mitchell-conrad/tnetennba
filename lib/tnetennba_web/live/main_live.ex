@@ -19,22 +19,28 @@ defmodule TnetennbaWeb.MainLive do
     <p>
       Today's global record: <%= @global_record %>
     </p>
-    <progress max={@global_max} value={length(@session_state.guesses)}> </progress>
+    <p>Time left: <%= @time_remaining %></p>
+    <progress max={@global_max} value={length(@session_state.guesses)}></progress>
+    <h1>
+      Timed: <%= get_timed_record(@session_state.start_time, @session_state.guesses) %>
+    </h1>
+
+    <h1>
+      Zen: <%= length(@session_state.guesses) %>
+    </h1>
 
     <.simple_form autocomplete="off" for={@form} phx-change="change" phx-submit="guess">
       <.input autofocus field={@form[:guess]} />
     </.simple_form>
 
-    <h1>
-      <%= length(@session_state.guesses) %>
-    </h1>
-
     <ul>
       <li :for={[guess, time] <- @session_state.guesses}>
         <%= if guess == @session_state.word do %>
-          <%= String.upcase(guess) %> <%= seconds_to_mins(time - @session_state.start_time) %>
+          <mark>
+            <%= String.upcase(guess) %> <%= seconds_to_mins(time - @session_state.start_time) %>
+          </mark>
         <% else %>
-          <%= String.downcase(guess) %> <%= seconds_to_mins(time - @session_state.start_time) %>
+          <%= String.downcase(guess) %>
         <% end %>
       </li>
     </ul>
@@ -112,7 +118,26 @@ defmodule TnetennbaWeb.MainLive do
     {:noreply, assign(socket, :form, to_form(form))}
   end
 
+  def handle_info(:timer_tick, socket) do
+    timer = Process.send_after(self(), :timer_tick, 1000)
+    start_time = socket.assigns.session_state.start_time
+    time_remaining = get_time_remaining(start_time)
+
+    if time_remaining <= 0 do
+      Process.cancel_timer(timer)
+      {:noreply, assign(socket, time_remaining: time_remaining)}
+    else
+      {:noreply, assign(socket, time_remaining: time_remaining)}
+    end
+  end
+
+  # Handle reply from async dynamo update
+  def handle_info(_, socket) do
+    {:noreply, socket}
+  end
+
   def mount(_params, session, socket) do
+    if connected?(socket), do: Process.send_after(self(), :timer_tick, 1000)
     word = Tnetennba.Native.get_todays_word()
     letter = Tnetennba.Native.get_todays_letter()
     session_id = session["session_id"]
@@ -145,7 +170,8 @@ defmodule TnetennbaWeb.MainLive do
        dynamo_client: dynamo_client,
        global_record: global_record,
        global_max: global_max,
-       new_record?: false
+       new_record?: false,
+       time_remaining: get_time_remaining(session_state.start_time)
      })}
   end
 
@@ -165,5 +191,22 @@ defmodule TnetennbaWeb.MainLive do
 
   def letterise(letters) do
     String.upcase("#{letters}")
+  end
+
+  def get_timed_record(start_time, guesses) do
+    max_time = start_time + System.convert_time_unit(120, :second, :native)
+
+    guesses
+    |> Enum.filter(fn [_, guess_time] -> guess_time < max_time end)
+    |> length()
+  end
+
+  def get_time_remaining(start_time) do
+    time_left = 120 - System.convert_time_unit(System.os_time() - start_time, :native, :second)
+    if time_left < 0 do
+      0
+    else
+      time_left
+    end
   end
 end

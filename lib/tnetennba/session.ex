@@ -1,4 +1,5 @@
 defmodule Tnetennba.Session do
+  require Logger
   @derive [Poison.Encoder]
   defstruct [:letters, :word, :guesses, :start_time]
 
@@ -10,7 +11,9 @@ defmodule Tnetennba.Session do
       {:ok, %{"Item" => %{"State" => %{"S" => state_json}}}, _} ->
         Poison.decode(state_json, as: %Tnetennba.Session{})
 
-      _ ->
+      a ->
+        IO.inspect a
+        Logger.warning("Failed to get state")
         {:ok, %Tnetennba.Session{}}
     end
   end

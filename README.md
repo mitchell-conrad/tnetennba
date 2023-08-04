@@ -1,6 +1,7 @@
 # Tnetennba
 
 ## TODO
+- timer to counteract the progress bar (or maybe change progress bar to timer bar)
 - live update global daily record
 - render svg containing day's letters
 - styling loooool
