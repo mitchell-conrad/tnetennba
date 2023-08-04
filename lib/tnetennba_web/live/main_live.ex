@@ -48,6 +48,16 @@ defmodule TnetennbaWeb.MainLive do
         </li>
       </ul>
     <% else %>
+      <p>
+        Instructions:
+        <p>
+          Enter words in the box that:
+          <ul>
+            <li>- Inlude only letters from "Today's letters"</li>
+            <li>- Include the target letter</li>
+          </ul>
+        </p>
+      </p>
       <.button phx-click="start" class="ml-2">Start!</.button>
     <% end %>
     """
