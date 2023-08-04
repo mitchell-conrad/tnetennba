@@ -1,13 +1,13 @@
 # Tnetennba
 
 ## TODO
-- timer to counteract the progress bar (or maybe change progress bar to timer bar)
 - live update global daily record
 - render svg containing day's letters
 - styling loooool
 - share button
   - implement as a js clipboard call? https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/Interact_with_the_clipboard
 - [low] tests
+- ~~timer to counteract the progress bar (or maybe change progress bar to timer bar)~~
 - ~~fix timestamp overflow in dynamo (store as an string?)~~
 - ~~progres bar showing how close you are to "done"~~
 - ~~find a better dictionary~~
