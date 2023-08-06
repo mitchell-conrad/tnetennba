@@ -36,7 +36,7 @@ fn get_max_anagrams() -> usize {
 
 lazy_static! {
     pub static ref WORDS: Vec<String> = core::get_words();
-    pub static ref DICTIONARY: Vec<String> = core::get_dictionary();
+    pub static ref DICTIONARY: Vec<String> = core::get_dictionary("filtered_dictionary.txt");
 }
 
 fn load(_env: Env, _: Term) -> bool {

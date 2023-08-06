@@ -43,22 +43,12 @@ pub fn get_words() -> Vec<String> {
     }
 }
 
-pub fn get_dictionary() -> Vec<String> {
-    let is_prod = env::var("IS_PROD").is_ok();
-
-    if is_prod {
-        let file = File::open("filtered_dictionary.txt").unwrap();
-        io::BufReader::new(file)
-            .lines()
-            .map(|l| l.expect("Could not parse line"))
-            .collect()
-    } else {
-        let file = File::open("filtered_dictionary.txt").unwrap();
-        io::BufReader::new(file)
-            .lines()
-            .map(|l| l.expect("Could not parse line"))
-            .collect()
-    }
+pub fn get_dictionary(path: &str) -> Vec<String> {
+    let file = File::open(path).unwrap();
+    io::BufReader::new(file)
+        .lines()
+        .map(|l| l.expect("Could not parse line"))
+        .collect()
 }
 
 fn is_partial_anagram(needle: &str, haystack: &str) -> bool {
@@ -138,15 +128,13 @@ mod tests {
 
     #[test]
     fn test_dictionary_lookup() {
-        assert!(dictionary_contains(&get_dictionary(), "test"));
+        assert!(dictionary_contains(&get_dictionary("../../filtered_dictionary.txt"), "test"));
     }
 
     #[test]
     fn test_anagram_count() {
-        
-
         assert_eq!(
-            get_valid_anagram_count(&get_dictionary(), "niceltfspoot", "s"),
+            get_valid_anagram_count(&get_dictionary("../../filtered_dictionary.txt"), "niceltfspoot", "s"),
             15
         );
     }

@@ -48,7 +48,8 @@ defmodule Tnetennba.MixProject do
       {:aws, "~> 0.13.3"},
       {:hackney, "~> 1.16"},
       {:elixir_uuid, "~> 1.2"},
-      {:poison, "~> 5.0"}
+      {:poison, "~> 5.0"},
+      {:benchee, "~> 1.0", only: :dev}
     ]
   end
 

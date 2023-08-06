@@ -20,10 +20,14 @@ defmodule Tnetennba.Session do
 
   def put_session(client, session_id, session_state) do
     encoded_state = Poison.encode!(session_state)
+    ttl = DateTime.utc_now() |> DateTime.add(1, :day) |> DateTime.to_unix(:second)
+    item = %{SessionId: %{S: session_id}, State: %{S: encoded_state}, Ttl: %{N: Integer.to_string(ttl)}}
+
+    IO.inspect item
 
     AWS.DynamoDB.put_item(client, %{
       TableName: "tnetennba-sessions",
-      Item: %{SessionId: %{S: session_id}, State: %{S: encoded_state}}
+      Item: item
     })
   end
 end
