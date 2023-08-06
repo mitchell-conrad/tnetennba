@@ -23,8 +23,6 @@ defmodule Tnetennba.Session do
     ttl = DateTime.utc_now() |> DateTime.add(1, :day) |> DateTime.to_unix(:second)
     item = %{SessionId: %{S: session_id}, State: %{S: encoded_state}, Ttl: %{N: Integer.to_string(ttl)}}
 
-    IO.inspect item
-
     AWS.DynamoDB.put_item(client, %{
       TableName: "tnetennba-sessions",
       Item: item
